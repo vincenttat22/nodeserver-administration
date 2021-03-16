@@ -1,10 +1,12 @@
 const mysql = require("mysql");
-let dbConfig = {
-    host     : '192.168.0.4',
-    user     : 'web',
-    password : 'rec0rd001',
-    database : 'home_server'
+require("dotenv").config();
+const dbConfig = {
+    host     : process.env.DATABASE_HOST,
+    user     : process.env.DATABASE_USER,
+    password : process.env.DATABASE_PASSWORD,
+    database : process.env.DATABASE_NAME
 };
+
 const pool = mysql.createPool(dbConfig);
 const connection = () => {
     return new Promise((resolve, reject) => {

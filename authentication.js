@@ -39,6 +39,8 @@ const authSelf = module.exports  = {
         return result;
     },
     querySignIn: function (data,callback) {
+        console.log('dirname',__dirname);
+
         let out = {auth:true,msg:"",sqlError:[],userProfile:{}};
         pool.getConnection(function(err, connection) {
             if (err) throw err;
