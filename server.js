@@ -3,8 +3,9 @@ const cors = require('cors');
 const multer = require('multer')
 const bodyParser = require('body-parser');
 const request = require('request')
-const {verifyJWT,querySignIn, querySignUp,renewJwt} = require('./authentication')
+const {verifyJWT,querySignIn, querySignUp,renewJwt,queryCheckSignIn} = require('./authentication')
 const md5 = require('md5');
+const {sendMail} = require('./nodemailer');
 
 const cookieParser = require("cookie-parser");
 const app = express()
@@ -36,6 +37,13 @@ const uploadImage = multer({ storage: storage }).single('file')
 
 
 app.get('/checkLogin',verifyJWT, function (req, res) {
+    queryCheckSignIn(req,function(out) {
+        res.send(out);
+    });
+})
+
+app.get('/sendNow',verifyJWT, function (req, res) {
+    sendMail('vincenttat@live.com','test','Content Test').catch(console.error);
     const out = {auth:true,uid:md5(req.userId)};
     res.send(out);
 })
@@ -82,7 +90,7 @@ users = [{id:1,username:"vincent",first_name:"Vincent",last_name:"Tat",password:
 app.post('/processLogin',function (req, res){
     querySignIn(req.body,function (rs){
         if(rs.auth) {
-            renewJwt(req,res,rs.userProfile.id);
+            renewJwt(req,res,rs.userProfile.user_id);
         }
         res.send(rs);
     });
@@ -100,7 +108,7 @@ app.post('/processSignup',function (req, res){
         let promise = new Promise(function(resolve, reject) {
             querySignUp(req.body, function (rs) {
                 if(rs.auth) {
-                    renewJwt(req,res,rs.userProfile.id);
+                    renewJwt(req,res,rs.userProfile.user_id);
                 }
                 res.send(rs);
                 resolve(rs.result);

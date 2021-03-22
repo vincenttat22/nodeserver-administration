@@ -3,7 +3,6 @@ const {mysql,pool} = require('./dbConnection')
 
 const authSelf = module.exports  = {
     verifyJWT : function (req,res,next) {
-        console.log("SSSSS",this)
         let token = req.cookies['aTcK']
         const jwtKey = req.cookies['sTc']
         const out = {auth:false,msg:""}
@@ -30,30 +29,44 @@ const authSelf = module.exports  = {
         res.setHeader('Set-Cookie', ['aTcK='+token+'; HttpOnly; expires='+new Date(new Date().getTime()+3600000).toUTCString(),'sTc='+secretJwt+'; HttpOnly; expires='+new Date(new Date().getTime()+3600000).toUTCString()]);
     },
     makeid: function (length) {
-        var result           = '';
-        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        var charactersLength = characters.length;
-        for ( var i = 0; i < length; i++ ) {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let charactersLength = characters.length;
+        for ( let i = 0; i < length; i++ ) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
         return result;
     },
-    querySignIn: function (data,callback) {
-        console.log('dirname',__dirname);
-
-        let out = {auth:true,msg:"",sqlError:[],userProfile:{}};
+    queryCheckSignIn: function (data,callback) {
+        let out = {auth:true,msg:"",is_verified:false};
         pool.getConnection(function(err, connection) {
             if (err) throw err;
-            connection.query("SELECT id,email,first_name,last_name FROM user WHERE email = ? AND password = ?", [data.email,data.password], function (error, results, fields) {
+            connection.query("SELECT is_verified FROM user WHERE id = ? and is_verified > 0", [data.userId], function (error, results, fields) {
                 connection.release();
                 if (error) {
                     throw error;
                 } else {
-                    console.log(results)
+                    if (results.length > 0) {
+                        out.is_verified = true;
+                    }
+                    callback(out);
+                }
+            });
+        });
+    },
+    querySignIn: function (data,callback) {
+        let out = {auth:true,msg:"",sqlError:[],userProfile:{}};
+        pool.getConnection(function(err, connection) {
+            if (err) throw err;
+            connection.query("SELECT id as 'user_id',email,first_name,last_name,is_verified FROM user WHERE email = ? AND password = ?", [data.email,data.password], function (error, results, fields) {
+                connection.release();
+                if (error) {
+                    throw error;
+                } else {
                     if (results.length > 0) {
                         const md5 = require('md5');
                         let userProfile = results[0];
-                        userProfile.id = md5(userProfile.id)
+                        userProfile.id = md5(userProfile.user_id)
                         out.userProfile = userProfile;
                     } else {
                         out.auth = false;
@@ -90,6 +103,7 @@ const authSelf = module.exports  = {
                 await connection.query("COMMIT");
                 let userProfile = getUserInfo[0];
                 const md5 = require('md5');
+                userProfile.user_id = userProfile.id;
                 userProfile.id = md5(userProfile.id)
                 out.userProfile = userProfile;
             }
