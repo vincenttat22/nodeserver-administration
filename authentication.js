@@ -57,11 +57,11 @@ const authSelf = module.exports  = {
     querySignIn: function (data,callback) {
         let out = {auth:true,msg:"",sqlError:[],userProfile:{}};
         pool.getConnection(function(err, connection) {
-            if (err) throw err;
+            if (err) console.log(err);
             connection.query("SELECT id as 'user_id',email,first_name,last_name,is_verified FROM user WHERE email = ? AND password = ?", [data.email,data.password], function (error, results, fields) {
                 connection.release();
                 if (error) {
-                    throw error;
+                    console.log(error);
                 } else {
                     if (results.length > 0) {
                         const md5 = require('md5');
